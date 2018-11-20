@@ -20,28 +20,59 @@ static inline size_t align(size_t size) { //retorna o tamanho multiplo do size_t
     return size + (sizeof(size_t) - 1) & ~(sizeof(size_t) - 1);
 }
 
+struct block_meta *get_new_block(){
+  struct block_meta *new_block = sbrk(align(sizeof(struct block_meta))); 
+  new_block->prev = NULL;
+  new_block->next = NULL;
+  new_block->size = 0;
+  new_block->free = 0;
+  return new_block;
+}
+
+void merge_next(struct block_meta *c) { // JUNTA BLOCOS
+  
+    c->size = align(c->size + c->next->size); // Tamanho do bloco total = tamanho atual + tamanho do proximo
+    printf("novo tamanho: %td \n", c-> size);
+    c->next = c->next->next; // Proximo atual = proximo do proximo
+    if (c->next) {
+        c->next->prev = c; // Se existir proximo, next->prev = c
+    }
+}
+
+void split_next(struct block_meta *c, size_t size) { // Dividir dois blocos (será usádo para dividir a parte não usada em outro bloco)
+    printf("split \n");
+    struct block_meta *new_block = (struct block_meta*)((char*) c + size); // posição do novo chunk! endereço C (atual) + tamanho!
+    new_block->prev = c; // novo->anterior aponta para o C
+    new_block->next = c->next; // novo->proximo aponta para o proximo do c (inserido no meio)
+    printf("split \n");
+    
+    new_block->size = c->size - size; // tamanho do novo chunk = tamanho do C - espaço usado
+    new_block->free = 1; // novo chunk setado como livre   
+    printf("split \n");
+    
+    if (c->next) {
+        printf("Endereco do novo ponteiro: %p \n", &c->next);
+        c->next->prev = new_block;
+
+    }
+    c->next = new_block; //proximo de C = novo C
+    c->size = size - sizeof(new_block); // tamanho de C = tamanho usado - tamanho de bloco
+}
+
 //procura um bloco livre
-struct block_meta *find_free_block(struct block_meta **last, size_t size) {
-  struct block_meta *current = global_base;
+struct block_meta *find_free_block(size_t size) {
+  struct block_meta *current = top_block;
   while (current && !(current->free && current->size >= size)) {
-    *last = current;
+  printf("achar um bloco\n");
+    global_base = current;
     current = current->next;
   }
   return current;
 }
 
-void merge_next(struct block_meta *c) { // JUNTA BLOCOS
-  
-    c->size = align(c->size + c->next->size); // Tamanho do bloco total = tamanho atual + tamanho do proximo + tamanho do metadado
-    printf("novo tamanho: %td \n", c-> size);
-    c->next = c->next->next; // Proximo atual = proximo do proximo
-    if (c->next) {
-        c->next->prev = c; // Se existir proximo, proximo->anterior = c
-    }
-}
-
 //caso nao tenha bloco livre devera pedir mais memoria pro SO
 struct block_meta *request_space(struct block_meta* last, size_t size) {  
+  printf("request space\n");
   struct block_meta *block;
   block = sbrk(0);// te retorna o proximo endereco de memoria livre
   void *request = sbrk(align(size + META_SIZE)); // requisita o tamanho pedido e retorna o topo (mesmo valor do sbrk(0))
@@ -68,7 +99,7 @@ void *MyMalloc(size_t size) {
     return NULL;
   }
 
-  if (!global_base) { //  primeira chamada
+  if (!top_block) { //  primeira chamada
     block = request_space(NULL, size);
     if (!block) {
       return NULL;
@@ -76,16 +107,19 @@ void *MyMalloc(size_t size) {
     global_base = block;
     top_block = block;
   } else {
-    struct block_meta *last = global_base;
-    block = find_free_block(&last, size);
+    struct block_meta *global = global_base;
+    block = find_free_block(size);
     if (!block) { // Failed to find free block.
-      block = request_space(last, size);
+      block = request_space(global, size);
       if (!block) {
         return NULL;
       }
-    } else {      // Found free block
-    
-      block->free = 0;
+    } else {      // Found free block      
+      if (block) {
+        printf("achou vazio \n");
+        split_next(block, align(size));
+        block->free = 0;
+      }
     }
   }
 
@@ -124,6 +158,7 @@ int main () {
     int* n1;
     int* n2;
     int* n3;
+    int* n4;
     n1 = (int*)MyMalloc(sizeof(int));
     n2 = (int*)MyMalloc(sizeof(int));
     n3 = (int*)MyMalloc(sizeof(int));
@@ -131,11 +166,16 @@ int main () {
     *n2 = 500;    
     *n3 = 1000;
     printf("Endereco do novo ponteiro: %p \n", &n1);
-    printf("TAMANHO do novo ponteiro: %ld \n", get_block_ptr(n1)->size);
     printf("Endereco do novo ponteiro: %p \n", &n2);
     printf("Endereco do novo ponteiro: %p \n", &n3);
     printf("Valor: %d \n", *n1);
     MyMallocFree(n2);
     MyMallocFree(n3);
     printf("Valor: %d \n", *n1);
+
+    n4 = (int*)MyMalloc(sizeof(int));
+    *n4 = 2000;
+    printf("Endereco do novo ponteiro: %p \n", &n4);
+
+
 }
