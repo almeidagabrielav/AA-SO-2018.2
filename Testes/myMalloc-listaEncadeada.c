@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "myMalloc.c"
+#include "../myMalloc.c"
 /*
    Estrutura  que define a Lista
    Lembrando que a a instrução: struct celulaLista *proximo

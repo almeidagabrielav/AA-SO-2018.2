@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <limits.h>
+#include "../myMalloc.c"
 
 #define TAM_NOME 100
 #define NOME_ARQUIVO "arquivo_A1.dat"
