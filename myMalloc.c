@@ -233,6 +233,13 @@ void MyMallocFree(void *ptr) {
 
 }
 
+void *MyMallocInit() {
+  MyMalloc(2000);
+  top_block->free = 1;
+  //print_myMalloc_information();
+}
+
+
 /*int main () {
     int* n1;
     long double* n2;
