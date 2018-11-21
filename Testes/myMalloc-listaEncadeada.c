@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "myMalloc.c"
 /*
    Estrutura  que define a Lista
    Lembrando que a a instrução: struct celulaLista *proximo
@@ -17,11 +17,12 @@ int main(){
       celula *pLista;
       int opcao = 0;
    // Funções
-      void initLista(celula **pRecebido);
-      void insertLista(celula **pRecebido);
+      void initLista(celula **pRecebido);      
+      void insertLista(celula **pRecebido);      
       void buscaListaSimples(celula **pRecebido);
       void removeElementoListaSimples(celula **pRecebido);
       int leValor(int *valorRecebido);
+      
    // Instruções
       pLista = (celula *)MyMalloc(sizeof(struct celulaLista));
       initLista(&pLista);
@@ -48,19 +49,23 @@ void buscaListaSimples(celula **pRecebido){
    // Declarações
       celula *temporario;
    // Instruções
+      
       if((*pRecebido)->proximo == NULL){
          printf("Lista Vazia!\n");
       }
       else{
+
          temporario = (celula *)MyMalloc(sizeof(celula));
          temporario = (*pRecebido)->proximo;
          printf("Lista = ");
+
          while(temporario != NULL){
             printf("%d ", temporario->informacao);
             temporario = temporario->proximo;
          }
          printf("\n");
-      }   
+      }  
+
 }
 
 /*
@@ -77,7 +82,7 @@ void insertLista(celula **pRecebido){
          temporario->informacao = valor;
          temporario->proximo = (*pRecebido)->proximo;
          (*pRecebido)->proximo = temporario;
-      }  
+      }
 
       buscaListaSimples(pRecebido);
 }

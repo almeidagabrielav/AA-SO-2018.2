@@ -50,22 +50,25 @@ void merge_next(struct block_meta *c) { // JUNTA BLOCOS
 void split_next(struct block_meta *c, size_t size) { // Dividir dois blocos (será usádo para dividir a parte não usada em outro bloco)
     int new_size = align(size + META_SIZE);
     struct block_meta *new_block = (struct block_meta*)((char *)c+(new_size));
-    new_block->prev = c; 
-    new_block->next = c->next;    
-    new_block->size = (c->size - size); // espaco anterior - o atual
+    new_block->prev = c;
+    new_block->next = c->next;
+    new_block->size = (c->size - size); // espaco anterior - o atual    
     new_block->free = 1; 
+    
     if (c->next) {// se tiver um proximo
         c->next->prev = new_block;
     }
     c->next = new_block; 
-    c->size = size; 
+    c->size = size;
+
     c->free = 0;
 }
 
 //procura um bloco livre
 struct block_meta *find_free_block(size_t size) {
-  struct block_meta *current = top_block;
-  while (current && !(current->free && current->size >= size)) {  
+  struct block_meta *current = top_block;  
+  while (current && !(current->free && current->size >= size) && current->size > 0) {  
+    //printf("TAMANHO BLOCO: %d", current->size);
     global_base = current;
     current = current->next;
   }
@@ -82,6 +85,7 @@ struct block_meta *request_space(struct block_meta* last, size_t size) {
   assert((void*)block == request); 
   if (request == (void*) -1) {
     return NULL; // sbrk falhou.
+    printf("\nFalha na alocacao\n");
   }
   if (!lastB) { // NULL ou primeira chamada.
     lastB = block;
@@ -92,7 +96,7 @@ struct block_meta *request_space(struct block_meta* last, size_t size) {
   global_base = block;
   block->size = size;
   block->next = NULL;
-  block->free = 0;
+  
   block->prev = lastB;  
 
   return block;
@@ -103,6 +107,7 @@ void *MyMalloc(size_t size) {
 
   if (size <= 0) {
     return NULL;
+    printf("Erro, tamanho deve ser maior que 0");
   }
 
   if (!top_block) { //  primeira chamada
@@ -115,8 +120,8 @@ void *MyMalloc(size_t size) {
   } else {
     
     struct block_meta *global = global_base;
-    
     block = find_free_block(size);
+
     if (!block) { // Failed to find free block.
       block = request_space(global, size);
       if (!block) {
@@ -124,7 +129,10 @@ void *MyMalloc(size_t size) {
       }
     } else {      // Found free block      
       if (block) {
-        split_next(block, size);        
+        if(block->size > size){
+          split_next(block, size);     
+        }
+        block->free = 0;
       }
     }
   }
@@ -225,7 +233,7 @@ void MyMallocFree(void *ptr) {
 
 }
 
-int main () {
+/*int main () {
     int* n1;
     long double* n2;
     int* n3;
@@ -252,4 +260,4 @@ int main () {
     //printf("Endereco do novo ponteiro: %p \n", &n4);
 
 
-}
+}*/
