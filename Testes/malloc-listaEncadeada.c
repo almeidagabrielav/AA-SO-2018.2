@@ -29,7 +29,7 @@ int main(){
             insertLista(&pLista, 1);
             //buscaListaSimples(&pLista);
       }
-      for(int i = 0; i < 100000000; i++){
+      for(int i = 0; i < 10000000; i++){
             buscaListaSimples(&pLista);
       }    
 
